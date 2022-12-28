@@ -1,12 +1,13 @@
 CC=gcc
 TARGET=periodic
-LIBS=-lncurses
+LIBS=-lncurses -lform
 CFLAGS=
 
 .PHONY: clean
 
 periodic: periodic.c
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+	if [ ! -d "bin" ]; then mkdir bin; fi
+	$(CC) -o bin/$@ $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm $(TARGET)
+	rm bin/$(TARGET)

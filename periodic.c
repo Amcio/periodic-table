@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <form.h>
 #include <string.h>
 #include <errno.h>
 #include <stddef.h>
@@ -93,7 +94,7 @@ int main() {
     printf("%s", two);
     size_t len;
     element* elements = readElements(&len);
-    printf("%s\n%d\n", elements[0].name, elements[0].amass);
-    printf("%s\n%d\n", elements[0].name, elements[0].amass);
+    printf("%s\n%d\n", elements[0].name, elements[0].anum);
+    printf("%s\n%d\n", elements[1].name, elements[1].anum);
     return 0;
 }
