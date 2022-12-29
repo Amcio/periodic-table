@@ -2,6 +2,7 @@
 #include <form.h>
 #include <panel.h>
 #include <string.h> // strlen
+#include <stdlib.h>
 
 void midPrint(WINDOW* win, int starty, int startx, int width, char* string, chtype color) {
     int length, y, x;
@@ -26,6 +27,47 @@ void midPrint(WINDOW* win, int starty, int startx, int width, char* string, chty
     refresh();
 }
 
+void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
+    int ch, add_lines, add_cols;
+    FIELD** add_fields = form_fields(add_form);
+    scale_form(add_form, &add_lines, &add_cols); // Get the size of the form
+    show_panel(form_panel);
+    update_panels();
+    doupdate();
+    while ((ch = wgetch(form_win)) != KEY_F(1)) {
+        switch (ch) {
+            case KEY_DOWN:
+                form_driver(add_form, REQ_NEXT_FIELD);
+                form_driver(add_form, REQ_END_LINE);
+                break;
+            case KEY_UP:
+                form_driver(add_form, REQ_PREV_FIELD);
+                form_driver(add_form, REQ_END_LINE);
+                break;
+            case KEY_BACKSPACE:
+                form_driver(add_form, REQ_PREV_CHAR);
+                form_driver(add_form, REQ_DEL_CHAR);
+                break;
+            case 10:
+                if ((form_driver(add_form, REQ_VALIDATION) != E_OK) || !field_status(add_fields[0]) || !field_status(add_fields[2])) {
+                    midPrint(form_win, 1, 0, add_cols + 4, "Wrong Data!", COLOR_PAIR(2));
+                    // sleep(5);
+                    pos_form_cursor(add_form);
+                    update_panels();
+                    doupdate();
+                } else {
+                    goto exit_loop;
+                }
+                break;
+            default:
+                // Print a normal character
+                form_driver(add_form, ch);
+                break;
+        }
+    }
+    exit_loop: ;
+}
+
 int main(void) {
     initscr();
     refresh();
@@ -35,6 +77,7 @@ int main(void) {
     keypad(stdscr, TRUE);
 
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
 
     attron(A_REVERSE);
     mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F10 Exit");
@@ -52,8 +95,6 @@ int main(void) {
     wrefresh(menu_win);
     wrefresh(info_win);
 
-    getch();
-
     int add_cols, add_lines, ch;
     
     FIELD* add_fields[6];
@@ -67,6 +108,10 @@ int main(void) {
         set_field_back(add_fields[i], A_UNDERLINE);
         field_opts_off(add_fields[i], O_AUTOSKIP);
     }
+
+    /* Add validation */
+    set_field_type(add_fields[2], TYPE_INTEGER, 3, 1, 133);
+    set_field_type(add_fields[3], TYPE_INTEGER, 6, 1, 999999);
 
     FORM* add_form = new_form(add_fields);
     scale_form(add_form, &add_lines, &add_cols);
@@ -83,31 +128,33 @@ int main(void) {
     midPrint(add_form_win, 1, 0, add_cols + 4, "Add Element", COLOR_PAIR(1));
 
     post_form(add_form);
+
+    hide_panel(add_form_panel);
     update_panels();
-
     doupdate();
-
-    while ((ch = wgetch(add_form_win)) != KEY_F(1)) {
-        switch (ch)
-        {
-        case KEY_DOWN:
-            form_driver(add_form, REQ_NEXT_FIELD);
-            form_driver(add_form, REQ_END_LINE);
-            break;
-        case KEY_UP:
-            form_driver(add_form, REQ_PREV_FIELD);
-            form_driver(add_form, REQ_END_LINE);
-            break;
-        case KEY_BACKSPACE:
-            form_driver(add_form, REQ_PREV_CHAR);
-            form_driver(add_form, REQ_DEL_CHAR);
-            break;
-        default:
-            // Print a normal character
-            form_driver(add_form, ch);
-            break;
+    while((ch = getch()) != 113) {
+        switch (ch) {
+            case KEY_F(1):
+                addElementMenu(add_form_panel, add_form_win, add_form);
+                hide_panel(add_form_panel);
+                update_panels();
+                doupdate();
+                break;
+            case KEY_F(10):
+                endwin();
+                exit(0);
+            default:
+                break;
         }
     }
 
+
+
+    getch();
+
+    show_panel(add_form_panel);
+    update_panels();
+    doupdate();
+    getch();
     endwin();
 }
