@@ -24,7 +24,7 @@ int main()
     set_field_back(field[1], A_UNDERLINE);
     field_opts_off(field[1], O_AUTOSKIP);
 
-    set_field_type(field[0], TYPE_INTEGER, 0, 1, 133);
+    set_field_type(field[0], TYPE_INTEGER, 0, 1, 133); /* Set field validation */
 
     /* Create the form and post it */
     my_form = new_form(field);
@@ -33,6 +33,7 @@ int main()
 
     mvprintw(4, 10, "Value 1:");
     mvprintw(6, 10, "Value 2:");
+    move(4, 18);
     refresh();
 
     /* Loop through to get user requests */
