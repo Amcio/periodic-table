@@ -36,6 +36,7 @@ void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
     doupdate();
     while ((ch = wgetch(form_win)) != KEY_F(1)) {
         switch (ch) {
+            case 9:
             case KEY_DOWN:
                 form_driver(add_form, REQ_NEXT_FIELD);
                 form_driver(add_form, REQ_END_LINE);
@@ -44,11 +45,12 @@ void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
                 form_driver(add_form, REQ_PREV_FIELD);
                 form_driver(add_form, REQ_END_LINE);
                 break;
+			case 127: // Also backspace on different systems, possibly also KEY_DC
             case KEY_BACKSPACE:
                 form_driver(add_form, REQ_PREV_CHAR);
                 form_driver(add_form, REQ_DEL_CHAR);
                 break;
-            case 10:
+            case 10: // Enter
                 if ((form_driver(add_form, REQ_VALIDATION) != E_OK) || !field_status(add_fields[0]) || !field_status(add_fields[2])) {
                     midPrint(form_win, 1, 0, add_cols + 4, "Wrong Data!", COLOR_PAIR(2));
                     // sleep(5);
@@ -110,8 +112,8 @@ int main(void) {
     }
 
     /* Add validation */
-    set_field_type(add_fields[2], TYPE_INTEGER, 3, 1, 133);
-    set_field_type(add_fields[3], TYPE_INTEGER, 6, 1, 999999);
+    set_field_type(add_fields[2], TYPE_INTEGER, 3, 1, 133); // Atomic number
+    set_field_type(add_fields[3], TYPE_INTEGER, 6, 1, 999999); // Atomic mass
 
     FORM* add_form = new_form(add_fields);
     scale_form(add_form, &add_lines, &add_cols);
