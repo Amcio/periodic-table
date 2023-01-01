@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <unistd.h> // ftruncate
 #include <ctype.h> // isspace()
 #define DBFile "elements.csv"
 /**
@@ -51,10 +52,9 @@ int offsets[] = {
  * Remove an element from the .csv file. This works be rewriting the whole file except for the line with our element
  * @param Element THe element to be removed
 */
-// !!!!! DOES NOT REMOVE NEWLINE CHARACTER
 void removeElement(element* Element) {
     char* ElementStr, *ElementStrN;
-    FILE* fp, *temp;
+    FILE* dbp, *temp;
     char* line = NULL; // Line has to be a initialized pointer
     size_t read = 0;
     ssize_t nread;
@@ -65,8 +65,8 @@ void removeElement(element* Element) {
     }
     strcpy(ElementStrN, ElementStr);
     strcat(ElementStrN, "\n"); // Create a variation of our string with newline character at the end
-    fp = fopen(DBFile, "r+");
-    if (fp == NULL) {
+    dbp = fopen(DBFile, "r+");
+    if (dbp == NULL) {
         perror("Error opening DBFile");
         exit(1);
     }
@@ -75,14 +75,23 @@ void removeElement(element* Element) {
         perror("Error opening temp file");
         exit(1);
     }
-    while ((nread = getline(&line, &read, fp)) != -1) {
-        if ((strcmp(line, ElementStr) == 0) || (strcmp(line, ElementStrN) == 0)) {
+    while ((nread = getline(&line, &read, dbp)) != -1) {
+        // Last condition probably not needed
+        if ((strcmp(line, ElementStr) == 0) || (strcmp(line, ElementStrN) == 0) || (strcmp(line, "\n") == 0)) {
              continue; // Skip our element
         }
         fputs(line, temp);
     }
+    // Remove the last newline
+    fseek(temp, 0, SEEK_END);
+    long int fsize = ftell(temp);
+    int fd = fileno(temp); // File descriptor for temp file
+    if (ftruncate(fd, fsize - 1) == -1) {
+        perror("Error truncating tempfile");
+        exit(1);
+    }
     fclose(temp);
-    fclose(fp);
+    fclose(dbp);
     remove(DBFile);
     rename(".TEMPFILE", DBFile);
 }
@@ -172,7 +181,7 @@ int main() {
     size_t len;
     element* elements = readElements(&len);
     printf("%s\n%d\n", elements[0].name, elements[0].anum);
-    printf("%s\n%d\n", elements[2].name, elements[1].anum);
+    printf("%s\n%d\n", elements[1].name, elements[1].anum);
     element test = {.name = "Nitrogen", .symbol = "N", .anum = 7, .amass = 14, .comment = "Favourite Element"};
     // saveElement(&test);
     removeElement(&test);
