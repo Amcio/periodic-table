@@ -1,3 +1,4 @@
+#define _GNU_SOURCE // asprintf()
 #include <ncurses.h>
 #include <form.h>
 #include <string.h>
@@ -48,17 +49,15 @@ char* strstrip(char* s)
 
         return s;
 }
+
 /**
  * Create a string for writing or reading into the csv file
  * @param str char* for storing the string
  * @param Element The element to convert
- * @return 1 on any error
+ * @return -1 on any error, otherwise length of string
 */
 int elementToStr(char** str, element* Element) {
-    if (0 > asprintf(str, "%s,%s,%d,%d,%s", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment)) {
-        return 1;
-    }
-    return 0;
+    return asprintf(str, "%s,%s,%d,%d,%s", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment);
 }
 /**
  * Search the list of elements based on one of the parameters
@@ -82,24 +81,21 @@ element* searchElement(void* query, int offset) {
  * @return Pointer to the newData struct, update the array with it
 */
 element updateElement(element* oldData, element* newData) {
-    int count = 0;
+    int count = 0, strl = 0;
     char* line = NULL;
     size_t len = 0; // Actual length that got read by getline()
     ssize_t nread; // Size of data read by getline(), has to be signed
     FILE *dbp, *tmpfile;
-    // here be demons
     char* ElementStr, *ElementStrN, *ElementStrNew;
-    printf("ad");
-    asprintf(&ElementStr, "%s,%s,%d,%d,%s", oldData->name, oldData->symbol, oldData->anum, oldData->amass, oldData->comment);
-    // if (elementToStr(&ElementStr, oldData)) {
-    //     perror("Error creating ElementStr in updateElement()");
-    //     exit(1);
-    // }
-    printf("%s", ElementStr);
-    if (elementToStr(&ElementStrNew, newData)) {
+    if ((strl = elementToStr(&ElementStr, oldData)) == -1) {
         perror("Error creating ElementStr in updateElement()");
         exit(1);
     }
+    if (elementToStr(&ElementStrNew, newData) == -1) {
+        perror("Error creating ElementStrNew in updateElement()");
+        exit(1);
+    }
+    ElementStrN = malloc(sizeof(char) * (strl + 2)); // length of ElementStr + \n + \0
     strcpy(ElementStrN, ElementStr);
     strcat(ElementStrN, "\n"); // Create a variation of our string with newline character at the end
     dbp = fopen(DBFile, "r");
@@ -116,6 +112,7 @@ element updateElement(element* oldData, element* newData) {
         if ((strcmp(ElementStr, line) == 0)) {
             fputs(ElementStrNew, tmpfile);
         } else if (strcmp(ElementStrN, line) == 0) {
+            ElementStrN = realloc(ElementStrN, strlen(ElementStrN) + 2);
             strcat(ElementStrNew, "\n");
             fputs(ElementStrNew, tmpfile);
         } else {
@@ -124,6 +121,9 @@ element updateElement(element* oldData, element* newData) {
     }
     fclose(tmpfile);
     fclose(dbp);
+    free(ElementStr);
+    free(ElementStrN);
+    free(ElementStrNew);
     remove(DBFile);
     rename(".TEMPFILE", DBFile);
     return *newData;
@@ -139,10 +139,11 @@ void removeElement(element* Element) {
     size_t read = 0;
     ssize_t nread;
     // ElementStr = How does the element look in csv format? The string WILL have a newline at the end
-    if (elementToStr(&ElementStr, Element)) {
+    if (elementToStr(&ElementStr, Element) == -1) {
         perror("Error creating ElementStr in removeElement()");
         exit(1);
     }
+    ElementStrN = malloc(sizeof(char) * (strlen(ElementStr) + 2)); // ElementStr + \n + \0
     strcpy(ElementStrN, ElementStr);
     strcat(ElementStrN, "\n"); // Create a variation of our string with newline character at the end
     dbp = fopen(DBFile, "r+");
@@ -172,6 +173,8 @@ void removeElement(element* Element) {
     }
     fclose(temp);
     fclose(dbp);
+    free(ElementStr);
+    free(ElementStrN);
     remove(DBFile);
     rename(".TEMPFILE", DBFile);
 }
