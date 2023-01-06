@@ -227,10 +227,10 @@ element* readElements(size_t* length) {
                 break;
             }
             case 2:
-                *(uint8_t*)((char*)&Element+offsets[i]) = *token - '0';
+                *(uint8_t*)((char*)&Element+offsets[i]) = strtol(token, (char **)NULL, 10);
                 break;
             case 3:
-                *(uint32_t*)((char*)&Element+offsets[i]) = *token - '0';
+                *(uint32_t*)((char*)&Element+offsets[i]) = strtol(token, (char**)NULL, 10);
                 break;
             case 4: {
                 char* n = malloc(strlen(token) + 1);
