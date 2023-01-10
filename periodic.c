@@ -8,6 +8,7 @@
 #include <unistd.h> // ftruncate
 #include <ctype.h> // isspace()
 #define DBFile "elements.csv"
+
 typedef struct element {
     char* name;
     char* symbol;
@@ -29,8 +30,7 @@ int offsets[] = {
  * @param s Pointer to string
  * @return Pointer to our new string. (which is the same string)
 */
-char* strstrip(char* s)
-{
+char* strstrip(char* s) {
         size_t size;
         char *end;
 
@@ -44,8 +44,10 @@ char* strstrip(char* s)
                 end--;
         *(end + 1) = '\0';
 
-        while (*s && isspace(*s))
-                s++;
+        while (*s && isspace(*s)) {
+            s++;
+        }
+
 
         return s;
 }
@@ -61,17 +63,34 @@ int elementToStr(char** str, element* Element) {
 }
 /**
  * Search the list of elements based on one of the parameters
- * @param query What to look for
- * @param offset The offset to use for the field (0 or 1 for name or symbol respectively)
- * @return Pointer to the element that matches the query, struct will contain NULL if failed
+ * @param Elements the array of elements
+ * @param length length of the array (provided by readElements)
+ * @param query What to look for, must be an address
+ * @param offset The offset to use for the field (0 - name, 1 - symbol, 2 - atomic number, 3 - atomic mass)
+ * @return Pointer to the element that matches the query, NULL if failed
 */
-element* searchElement(void* query, int offset) {
+element* searchElement(element* Elements, size_t length, void* query, int offset) {
     if (offset == 0 || offset == 1) {
         // String
+        char* queryS = (char*)query;
+        for (int i = 0; i < length; i++) {
+            /* Compare name of element and symbol of element to the query */
+            if ((strcmp(Elements[i].name, queryS) == 0) || (strcmp(Elements[i].symbol, queryS) == 0)) {
+                return &Elements[i];
+            }
+        }
+        return (element*)NULL;
     } else if (offset == 2 || offset == 3) {
         // Int
+        for (int i = 0; i < length; i++) {
+            if ((Elements[i].anum == *(int*)query) || (Elements[i].amass == *(int*)query)) {
+                return &Elements[i];
+            }
+        }
+        return (element*)NULL;
     } else {
         // Error
+        return (element*)NULL;
     }
 }
 /**
@@ -179,7 +198,7 @@ void removeElement(element* Element) {
     rename(".TEMPFILE", DBFile);
 }
 /**
- * Save an element at the end of the .csv file
+ * Save an element at the end of the .csv file, it is your job to update the array and it's length variable
  * @param Element The element to be added
 */
 void saveElement(element* Element) {
@@ -188,11 +207,11 @@ void saveElement(element* Element) {
     fclose(fp);
 }
 /**
- * This function will load all elements from a .csv file into an array.
+ * This function will load all elements from a .csv file into an array. The array is NOT terminated.
  * @param length a variable to store the length of the array
  * @return An array filled with element structs
 */
-// TODO: INCOMPLETE, read only one digit for amass and anum, also size of elements array is hardcoded to 2
+// TODO: INCOMPLETE size of elements array is hardcoded to 2
 element* readElements(size_t* length) {
     FILE* fp = fopen(DBFile, "r");
     if (fp == NULL) {
@@ -269,6 +288,8 @@ int main() {
     element test = {.name = "Nitrogen", .symbol = "N", .anum = 7, .amass = 14, .comment = "Favourite Element"};
     // saveElement(&test);
     // removeElement(&test);
-    updateElement(&(elements[1]), &test);
+    // updateElement(&(elements[1]), &test);
+    int a = 14;
+    printf("Found: %s\n", searchElement(elements, len, &a, 3)->name);
     return 0;
 }
