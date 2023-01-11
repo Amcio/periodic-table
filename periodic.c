@@ -203,6 +203,10 @@ void removeElement(element* Element) {
 */
 void saveElement(element* Element) {
     FILE* fp = fopen(DBFile, "a");
+    if (fp == NULL) {
+        perror("saveElement: fopen");
+        exit(1);
+    }
     fprintf(fp, "\n%s,%s,%d,%d,%s", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment); 
     fclose(fp);
 }
@@ -211,7 +215,6 @@ void saveElement(element* Element) {
  * @param length a variable to store the length of the array
  * @return An array filled with element structs
 */
-// TODO: INCOMPLETE size of elements array is hardcoded to 2
 element* readElements(size_t* length) {
     FILE* fp = fopen(DBFile, "r");
     if (fp == NULL) {
@@ -225,7 +228,7 @@ element* readElements(size_t* length) {
     *length = (size_t)1; // Initialize length of array to 1
     size_t len = 0; // Actual length that got read by getline()
     ssize_t nread; // Size of data read by getline(), has to be signed
-    element* elements = malloc(sizeof(element) * 2);
+    element* elements = malloc(sizeof(element));
     while((nread = getline(&line, &len, fp)) != -1) {
         // Load each line into a struct and add into an array
         element Element;
@@ -263,6 +266,7 @@ element* readElements(size_t* length) {
             }
             token = strtok(NULL, ",");
         }
+        elements = realloc(elements, *length + 1);
         elements[*length-1] = Element;
         (*length)++;
         
