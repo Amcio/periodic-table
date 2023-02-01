@@ -55,6 +55,25 @@ char* strstrip(char* s) {
 int elementToStr(char** str, element* Element) {
     return asprintf(str, "%s,%s,%d,%d,%s", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment);
 }
+
+/**
+ * Compare two elements based on their atomic numbers.
+ * @param elem1 The first element
+ * @param elem2 The second element
+ * @return -1 if less than, 0 if equal, 1 if more than
+*/
+int compareElement(const void* elem1, const void* elem2) {
+    element* p1 = (element*)elem1;
+    element* p2 = (element*)elem2;
+    if (p1->anum < p2->anum) {
+        return -1;
+    } else if (p1->anum == p2->anum) {
+        return 0;
+    } else if (p1->anum > p2->anum) {
+        return 1;
+    }
+}
+
 /**
  * Search the list of elements based on one of the parameters
  * @param Elements the array of elements
@@ -266,6 +285,7 @@ element* readElements(size_t* length) {
         
     }
     fclose(fp);
+    qsort(elements, *length, sizeof(element), compareElement);
     return elements;
 }
 
