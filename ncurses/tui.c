@@ -99,17 +99,10 @@ void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
 void printElementInfo(WINDOW* info_win, MENU* element_menu, element* Elements) {
     werase(info_win);
     ITEM* cur_item = current_item(element_menu);
-    ITEM** element_items = menu_items(element_menu);
-    int index = 0;
-    while (element_items[index] != NULL) {
-        if (element_items[index] == cur_item) {
-            break;
-        }
-        index++;
-    }
-    element Element = Elements[index];
+    element Element = *(element*)item_userptr(cur_item);
     mvwprintw(info_win, 0, 0, "Name: %s\nSymbol: %s\nAtomic Number: %d\nAtomic Mass: %d\nComment: %s", Element.name, Element.symbol, Element.anum, Element.amass, Element.comment);
     wrefresh(info_win);
+    pos_menu_cursor(element_menu);
 }
 
 int main(void) {
@@ -124,22 +117,11 @@ int main(void) {
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(99, COLOR_WHITE, COLOR_BLACK);
 
-    attron(A_REVERSE);
-    mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F10 Exit");
-    attroff(A_REVERSE);
-
     int split = (0.75 * LINES) - 1; // Point of window split in 2/3 of the screen
     WINDOW* menu_win = newwin(split, COLS, 0, 0);
     WINDOW* info_win = newwin(LINES - split, COLS, split-1, 0);
     WINDOW* info_txt = derwin(info_win, LINES - split - 3, COLS - 3, 1, 1);
     keypad(menu_win, TRUE);
-    // Draw a box around the menu window
-    box(menu_win, 0, 0);
-    wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
-
-    // Display the menu and refresh the screen
-    wrefresh(menu_win);
-    wrefresh(info_win);
 
     /* CREATE ADD FORM */
 
@@ -215,6 +197,7 @@ int main(void) {
     ITEM** elements_items = (ITEM**)calloc(n_elements + 1, sizeof(ITEM*));
     for (int i = 0; i < n_elements; i++) {
         elements_items[i] = new_item(Elements[i].symbol, Elements[i].name);
+        set_item_userptr(elements_items[i], &Elements[i]);
     }
     elements_items[n_elements] = (ITEM*)NULL; // null-terminated
     MENU* elements_menu = new_menu(elements_items);
@@ -226,7 +209,21 @@ int main(void) {
     set_menu_format(elements_menu, split - 1, COLS - 4);
     set_menu_mark(elements_menu, "*");
     post_menu(elements_menu);
+
+    // Draw a box around the menu window
+    wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
+    wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+
+    attron(A_REVERSE);
+    mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F10 Exit");
+    attroff(A_REVERSE);
+
+    wnoutrefresh(stdscr);
+    wnoutrefresh(info_win);
+    wnoutrefresh(menu_win);
     doupdate();
+
+    printElementInfo(info_txt, elements_menu, Elements);
 
     int ch;
     while((ch = wgetch(menu_win)) != 113) {
