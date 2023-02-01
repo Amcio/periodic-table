@@ -79,21 +79,29 @@ void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
     show_panel(s_panel);
     update_panels();
     doupdate();
-    while ((ch = wgetch(s_win)) != KEY_F(2)) {
+    while ((ch = wgetch(s_win)) != KEY_F(3)) {
         switch (ch) {
-            case KEY_RIGHT:
-                menu_driver(s_menu, REQ_RIGHT_ITEM);
+            case KEY_UP:
+                menu_driver(s_menu, REQ_UP_ITEM);
                 break;
-            case KEY_LEFT:
-                menu_driver(s_menu, REQ_LEFT_ITEM);
+            case KEY_DOWN:
+                menu_driver(s_menu, REQ_DOWN_ITEM);
                 break;
             case 10:
                 unpost_menu(s_menu);
-                mvwprintw(s_win, 2, 2, "%s", "Enter query: ");
+                mvwprintw(s_win, 2, 2, "%s", "Enter query: \n");
                 doupdate();
+                echo();
                 wgetnstr(s_win, str, 20);
+                noecho();
+                break;
         }
     }
+    exit_loop: ;
+    hide_panel(s_panel);
+    update_panels();
+    doupdate();
+    free(str);
 }
 
 void printElementInfo(WINDOW* info_win, MENU* element_menu, element* Elements) {
@@ -171,10 +179,10 @@ int main(void) {
     }
     MENU* s_menu = new_menu(s_items);
     menu_opts_off(s_menu, O_SHOWDESC);
-    set_menu_mark(s_menu, " * ");
+    set_menu_mark(s_menu, "");
     scale_menu(s_menu, &s_lines, &s_cols);
 
-    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 4, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
+    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 5, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
     keypad(s_menu_win, TRUE);
     PANEL* s_menu_panel = new_panel(s_menu_win);
 
@@ -182,12 +190,11 @@ int main(void) {
     set_menu_sub(s_menu, derwin(s_menu_win, s_lines, s_cols, 2 ,2));
 
     box(s_menu_win, 0, 0);
-    midPrint(s_menu_win, 1, 0, s_cols + 4, "Search for Element", COLOR_PAIR(1));
+    midPrint(s_menu_win, 1, 0, s_cols + 5, "Search", COLOR_PAIR(1));
 
     hide_panel(s_menu_panel);
 
     update_panels();
-    doupdate();
 
     /* DISPLAY ELEMENTS */
     size_t n_elements = 0; // how many elements?
@@ -238,9 +245,11 @@ int main(void) {
                 break;
             case KEY_UP:
                 menu_driver(elements_menu, REQ_UP_ITEM);
+                printElementInfo(info_txt, elements_menu, Elements);
                 break;
             case KEY_DOWN:
                 menu_driver(elements_menu, REQ_DOWN_ITEM);
+                printElementInfo(info_txt, elements_menu, Elements);
                 break;
             case KEY_F(1):
                 addElementMenu(add_form_panel, add_form_win, add_form);
@@ -249,7 +258,8 @@ int main(void) {
                 doupdate();
                 break;
             case KEY_F(3):
-                
+                searchElementMenu(s_menu_panel, s_menu_win, s_menu);
+                break;
             case KEY_F(10):
                 endwin();
                 exit(0);

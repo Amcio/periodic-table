@@ -21,7 +21,7 @@ int elementToStr(char** str, element* Element);
 
 int compareElement(const void* elem1, const void* elem2);
 
-element* searchElement(element* Elements, size_t length, void* query, int offset);
+int32_t searchElement(element* Elements, size_t length, void* query, int offset);
 
 element updateElement(element* oldData, element* newData);
 

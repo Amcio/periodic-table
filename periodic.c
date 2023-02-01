@@ -80,30 +80,30 @@ int compareElement(const void* elem1, const void* elem2) {
  * @param length length of the array (provided by readElements)
  * @param query What to look for, must be an address
  * @param offset The offset to use for the field (0 - name, 1 - symbol, 2 - atomic number, 3 - atomic mass)
- * @return Pointer to the element that matches the query, NULL if failed
+ * @return Index of the element in the array, -1 if failed
 */
-element* searchElement(element* Elements, size_t length, void* query, int offset) {
+int32_t searchElement(element* Elements, size_t length, void* query, int offset) {
     if (offset == 0 || offset == 1) {
         // String
         char* queryS = (char*)query;
         for (int i = 0; i < length; i++) {
             /* Compare name of element and symbol of element to the query */
             if ((strcmp(Elements[i].name, queryS) == 0) || (strcmp(Elements[i].symbol, queryS) == 0)) {
-                return &Elements[i];
+                return i;
             }
         }
-        return (element*)NULL;
+        return -1;
     } else if (offset == 2 || offset == 3) {
         // Int
         for (int i = 0; i < length; i++) {
             if ((Elements[i].anum == *(int*)query) || (Elements[i].amass == *(int*)query)) {
-                return &Elements[i];
+                return i;
             }
         }
-        return (element*)NULL;
+        return -1;
     } else {
         // Error
-        return (element*)NULL;
+        return -1;
     }
 }
 /**
