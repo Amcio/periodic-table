@@ -1,3 +1,5 @@
+#include <stddef.h>
+#include <stdint.h>
 #ifndef periodic
 #define periodic
 

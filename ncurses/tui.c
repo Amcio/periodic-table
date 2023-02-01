@@ -3,7 +3,7 @@
 #include <panel.h>
 #include <string.h> // strlen
 #include <stdlib.h>
-#include <periodic.h>
+#include "periodic.h"
 
 void midPrint(WINDOW* win, int starty, int startx, int width, char* string, chtype color) {
     int length, y, x;
@@ -96,9 +96,25 @@ void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
     }
 }
 
+void printElementInfo(WINDOW* info_win, MENU* element_menu, element* Elements) {
+    werase(info_win);
+    ITEM* cur_item = current_item(element_menu);
+    ITEM** element_items = menu_items(element_menu);
+    int index = 0;
+    while (element_items[index] != NULL) {
+        if (element_items[index] == cur_item) {
+            break;
+        }
+        index++;
+    }
+    element Element = Elements[index];
+    mvwprintw(info_win, 0, 0, "Name: %s\nSymbol: %s\nAtomic Number: %d\nAtomic Mass: %d\nComment: %s", Element.name, Element.symbol, Element.anum, Element.amass, Element.comment);
+    wrefresh(info_win);
+}
+
 int main(void) {
     initscr();
-    refresh();
+    refresh(); // Things will break otherwise
     start_color();
     cbreak();
     noecho();
@@ -106,6 +122,7 @@ int main(void) {
 
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(99, COLOR_WHITE, COLOR_BLACK);
 
     attron(A_REVERSE);
     mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F10 Exit");
@@ -114,7 +131,8 @@ int main(void) {
     int split = (0.75 * LINES) - 1; // Point of window split in 2/3 of the screen
     WINDOW* menu_win = newwin(split, COLS, 0, 0);
     WINDOW* info_win = newwin(LINES - split, COLS, split-1, 0);
-
+    WINDOW* info_txt = derwin(info_win, LINES - split - 3, COLS - 3, 1, 1);
+    keypad(menu_win, TRUE);
     // Draw a box around the menu window
     box(menu_win, 0, 0);
     wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
@@ -189,9 +207,44 @@ int main(void) {
     update_panels();
     doupdate();
 
+    /* DISPLAY ELEMENTS */
+    size_t n_elements = 0; // how many elements?
+    int e_lines, e_cols;
+    element* Elements = readElements(&n_elements);
+
+    ITEM** elements_items = (ITEM**)calloc(n_elements + 1, sizeof(ITEM*));
+    for (int i = 0; i < n_elements; i++) {
+        elements_items[i] = new_item(Elements[i].symbol, Elements[i].name);
+    }
+    elements_items[n_elements] = (ITEM*)NULL; // null-terminated
+    MENU* elements_menu = new_menu(elements_items);
+
+    menu_opts_off(elements_menu, O_SHOWDESC);
+    scale_menu(elements_menu, &e_lines, &e_cols);
+    set_menu_win(elements_menu, menu_win);
+    set_menu_sub(elements_menu, derwin(menu_win, e_lines, e_cols, 2, 2));
+    set_menu_format(elements_menu, split - 1, COLS - 4);
+    set_menu_mark(elements_menu, "*");
+    post_menu(elements_menu);
+    doupdate();
+
     int ch;
-    while((ch = getch()) != 113) {
+    while((ch = wgetch(menu_win)) != 113) {
         switch (ch) {
+            case KEY_RIGHT:
+                menu_driver(elements_menu, REQ_RIGHT_ITEM);
+                printElementInfo(info_txt, elements_menu, Elements);
+                break;
+            case KEY_LEFT:
+                menu_driver(elements_menu, REQ_LEFT_ITEM);
+                printElementInfo(info_txt, elements_menu, Elements);
+                break;
+            case KEY_UP:
+                menu_driver(elements_menu, REQ_UP_ITEM);
+                break;
+            case KEY_DOWN:
+                menu_driver(elements_menu, REQ_DOWN_ITEM);
+                break;
             case KEY_F(1):
                 addElementMenu(add_form_panel, add_form_win, add_form);
                 hide_panel(add_form_panel);

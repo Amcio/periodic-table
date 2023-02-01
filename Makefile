@@ -1,18 +1,21 @@
 CC=gcc
 TARGET=periodic
+OBJFILES=periodic.o tui.o
 LIBS=-lncurses -lform -lmenu -lpanel
 INCLUDES=-Iinclude
 CFLAGS=
 
 .PHONY: clean
 
-tui: ncurses/tui.c
+$(TARGET): $(OBJFILES)
 	if [ ! -d "bin" ]; then mkdir bin; fi
-	$(CC) -o bin/$@ $^ $(CFLAGS) ${INCLUDES} $(LIBS)
+	$(CC) $(CFLAGS) -o bin/$@ $(OBJFILES) $(INCLUDES) $(LIBS)
 
-periodic: periodic.c
-	if [ ! -d "bin" ]; then mkdir bin; fi
-	$(CC) -o bin/$@ $^ $(CFLAGS) ${INCLUDES} $(LIBS)
+periodic.o: periodic.c
+	$(CC) -c -o $@ $^ $(CFLAGS) $(INCLUDES) $(LIBS)
+
+tui.o: ncurses/tui.c
+	$(CC) -c -o $@ $^ $(CFLAGS) $(INCLUDES) $(LIBS)
 
 clean:
-	rm bin/$(TARGET)
+	rm bin/$(TARGET) *.o

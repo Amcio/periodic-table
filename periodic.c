@@ -219,25 +219,25 @@ element* readElements(size_t* length) {
         exit(1);
     }
     char* line = NULL; // Line read from file
-    *length = (size_t)1; // Initialize length of array to 1
+    *length = (size_t)0; // Initialize length of array to 0
     size_t len = 0; // Actual length that got read by getline()
     ssize_t nread; // Size of data read by getline(), has to be signed
-    element* elements = malloc(sizeof(element));
+    element* elements = (element*)NULL;
     while((nread = getline(&line, &len, fp)) != -1) {
         // Load each line into a struct and add into an array
         element Element;
         char* token = strtok(line, ",");
         for (int i = 0; i < 5; i++) {
-            printf("%d: %s\n", i, token);
+            // printf("%d: %s\n", i, token);
             switch (i) {
             case 0: {
-                char* n = malloc(strlen(token) + 1); // Case must be inside code block to declare variables
+                char* n = (char*)malloc(strlen(token) + 1); // Case must be inside code block to declare variables
                 strcpy(n, token);
                 Element.name = n;
                 break;
             }
             case 1: {
-                char* n = malloc(strlen(token) + 1);
+                char* n = (char*)malloc(strlen(token) + 1);
                 strcpy(n, token);
                 Element.symbol = n;
                 break;
@@ -249,7 +249,7 @@ element* readElements(size_t* length) {
                 *(uint32_t*)((char*)&Element+offsets[i]) = strtol(token, (char**)NULL, 10);
                 break;
             case 4: {
-                char* n = malloc(strlen(token) + 1);
+                char* n = (char*)malloc(strlen(token) + 1);
                 strcpy(n, token);
                 Element.comment = n;
                 break;
@@ -260,8 +260,8 @@ element* readElements(size_t* length) {
             }
             token = strtok(NULL, ",");
         }
-        elements = realloc(elements, *length + 1);
-        elements[*length-1] = Element;
+        elements = (element*)realloc(elements, sizeof(element) * (*length + 1));
+        elements[*length] = Element;
         (*length)++;
         
     }
@@ -269,25 +269,25 @@ element* readElements(size_t* length) {
     return elements;
 }
 
-int main() {
-    FILE* fp = fopen("test", "wb");
-    size_t buf = 20;
-    char* str = "Something\\n\n";
-    fwrite(str, sizeof(char), strlen(str), fp);
-    fclose(fp);
-    fp = fopen("test", "r");
-    char* two;
-    getline(&two, &buf, fp);
-    printf("%s", two);
-    size_t len;
-    element* elements = readElements(&len);
-    printf("%s\n%d\n", elements[0].name, elements[0].anum);
-    printf("%s\n%d\n", elements[1].name, elements[1].anum);
-    element test = {.name = "Nitrogen", .symbol = "N", .anum = 7, .amass = 14, .comment = "Favourite Element"};
-    // saveElement(&test);
-    // removeElement(&test);
-    // updateElement(&(elements[1]), &test);
-    int a = 14;
-    printf("Found: %s\n", searchElement(elements, len, &a, 3)->name);
-    return 0;
-}
+// int main() {
+//     FILE* fp = fopen("test", "wb");
+//     size_t buf = 20;
+//     char* str = "Something\\n\n";
+//     fwrite(str, sizeof(char), strlen(str), fp);
+//     fclose(fp);
+//     fp = fopen("test", "r");
+//     char* two;
+//     getline(&two, &buf, fp);
+//     printf("%s", two);
+//     size_t len;
+//     element* elements = readElements(&len);
+//     printf("%s\n%d\n", elements[0].name, elements[0].anum);
+//     printf("%s\n%d\n", elements[1].name, elements[1].anum);
+//     element test = {.name = "Nitrogen", .symbol = "N", .anum = 7, .amass = 14, .comment = "Favourite Element"};
+//     // saveElement(&test);
+//     // removeElement(&test);
+//     // updateElement(&(elements[1]), &test);
+//     int a = 14;
+//     printf("Found: %s\n", searchElement(elements, len, &a, 3)->name);
+//     return 0;
+// }
