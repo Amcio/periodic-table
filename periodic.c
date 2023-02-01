@@ -7,15 +7,8 @@
 #include <stdlib.h>
 #include <unistd.h> // ftruncate
 #include <ctype.h> // isspace()
-#define DBFile "elements.csv"
+#include "periodic.h"
 
-typedef struct element {
-    char* name;
-    char* symbol;
-    uint8_t anum;
-    uint32_t amass;
-    char* comment;
-} element;
 
 int offsets[] = {
     offsetof(element, name),
@@ -36,18 +29,19 @@ char* strstrip(char* s) {
 
         size = strlen(s);
 
-        if (!size)
-                return s;
+        if (!size) {
+            return s;
+        }
 
         end = s + size - 1;
-        while (end >= s && isspace(*end))
-                end--;
+        while (end >= s && isspace(*end)) {
+            end--;
+        }
         *(end + 1) = '\0';
 
         while (*s && isspace(*s)) {
             s++;
         }
-
 
         return s;
 }

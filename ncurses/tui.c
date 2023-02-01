@@ -3,6 +3,7 @@
 #include <panel.h>
 #include <string.h> // strlen
 #include <stdlib.h>
+#include <periodic.h>
 
 void midPrint(WINDOW* win, int starty, int startx, int width, char* string, chtype color) {
     int length, y, x;
@@ -67,7 +68,32 @@ void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
                 break;
         }
     }
+    // Macro for leaving the loop from inside switch case
     exit_loop: ;
+}
+
+void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
+    int ch;
+    char* str = malloc(sizeof(char) * 20);
+    post_menu(s_menu);
+    show_panel(s_panel);
+    update_panels();
+    doupdate();
+    while ((ch = wgetch(s_win)) != KEY_F(2)) {
+        switch (ch) {
+            case KEY_RIGHT:
+                menu_driver(s_menu, REQ_RIGHT_ITEM);
+                break;
+            case KEY_LEFT:
+                menu_driver(s_menu, REQ_LEFT_ITEM);
+                break;
+            case 10:
+                unpost_menu(s_menu);
+                mvwprintw(s_win, 2, 2, "%s", "Enter query: ");
+                doupdate();
+                wgetnstr(s_win, str, 20);
+        }
+    }
 }
 
 int main(void) {
@@ -97,7 +123,9 @@ int main(void) {
     wrefresh(menu_win);
     wrefresh(info_win);
 
-    int add_cols, add_lines, ch;
+    /* CREATE ADD FORM */
+
+    int add_cols, add_lines;
     
     FIELD* add_fields[6];
     add_fields[0] = new_field(1, 20, 1, 1, 0, 0); // Element name
@@ -116,9 +144,9 @@ int main(void) {
     set_field_type(add_fields[3], TYPE_INTEGER, 6, 1, 999999); // Atomic mass
 
     FORM* add_form = new_form(add_fields);
-    scale_form(add_form, &add_lines, &add_cols);
+    scale_form(add_form, &add_lines, &add_cols); // get the size of the form
 
-    WINDOW* add_form_win = newwin(add_lines + 4, add_cols + 4, 4, 6);
+    WINDOW* add_form_win = newwin(add_lines + 4, add_cols + 4, (LINES / 2) - 10 - (add_lines / 2), (COLS / 2) - (add_cols / 2));
     keypad(add_form_win, TRUE);
     PANEL* add_form_panel = new_panel(add_form_win);
 
@@ -130,10 +158,38 @@ int main(void) {
     midPrint(add_form_win, 1, 0, add_cols + 4, "Add Element", COLOR_PAIR(1));
 
     post_form(add_form);
-
     hide_panel(add_form_panel);
+
+    /* CREATE SEARCH */
+    int s_lines, s_cols;
+    ITEM* s_items[5];
+    char* choices[] = {"Name", "Symbol", "Atomic Num", "Atomic Mass", (char*)NULL};
+
+    for (int i = 0; i < 5; i++) {
+        s_items[i] = new_item(choices[i], choices[i]);
+        set_item_userptr(s_items[i], i);
+    }
+    MENU* s_menu = new_menu(s_items);
+    menu_opts_off(s_menu, O_SHOWDESC);
+    set_menu_mark(s_menu, " * ");
+    scale_menu(s_menu, &s_lines, &s_cols);
+
+    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 4, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
+    keypad(s_menu_win, TRUE);
+    PANEL* s_menu_panel = new_panel(s_menu_win);
+
+    set_menu_win(s_menu, s_menu_win);
+    set_menu_sub(s_menu, derwin(s_menu_win, s_lines, s_cols, 2 ,2));
+
+    box(s_menu_win, 0, 0);
+    midPrint(s_menu_win, 1, 0, s_cols + 4, "Search for Element", COLOR_PAIR(1));
+
+    hide_panel(s_menu_panel);
+
     update_panels();
     doupdate();
+
+    int ch;
     while((ch = getch()) != 113) {
         switch (ch) {
             case KEY_F(1):
@@ -142,6 +198,8 @@ int main(void) {
                 update_panels();
                 doupdate();
                 break;
+            case KEY_F(3):
+                
             case KEY_F(10):
                 endwin();
                 exit(0);
@@ -149,8 +207,6 @@ int main(void) {
                 break;
         }
     }
-
-
 
     getch();
 
