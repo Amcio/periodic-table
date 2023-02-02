@@ -72,9 +72,9 @@ void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
     exit_loop: ;
 }
 
-void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
-    int ch;
-    char* str = malloc(sizeof(char) * 20);
+int32_t searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu, element* Elements, size_t length) {
+    int ch, offset;
+    char str[20];
     post_menu(s_menu);
     show_panel(s_panel);
     update_panels();
@@ -87,21 +87,31 @@ void searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu) {
             case KEY_DOWN:
                 menu_driver(s_menu, REQ_DOWN_ITEM);
                 break;
-            case 10:
+            case 10: /* Enter */
+                offset = item_index(current_item(s_menu));
                 unpost_menu(s_menu);
-                mvwprintw(s_win, 2, 2, "%s", "Enter query: \n");
+                mvwprintw(s_win, 2, 5, "%s", "Enter query: \n");
+                box(s_win, 0, 0); // redraw box after newline
                 doupdate();
                 echo();
+                wmove(s_win, 3, 1);
                 wgetnstr(s_win, str, 20);
                 noecho();
+                goto exit_loop;
                 break;
         }
     }
     exit_loop: ;
+
     hide_panel(s_panel);
     update_panels();
     doupdate();
-    free(str);
+    if (offset == 2 || offset == 3) {
+        int query = strtol(str, NULL, 10);
+        return searchElement(Elements, length, &query, offset);
+    }
+
+    return searchElement(Elements, length, str, offset);
 }
 
 void printElementInfo(WINDOW* info_win, MENU* element_menu, element* Elements) {
@@ -175,14 +185,14 @@ int main(void) {
 
     for (int i = 0; i < 5; i++) {
         s_items[i] = new_item(choices[i], choices[i]);
-        set_item_userptr(s_items[i], i);
+        // set_item_userptr(s_items[i], i);
     }
     MENU* s_menu = new_menu(s_items);
     menu_opts_off(s_menu, O_SHOWDESC);
     set_menu_mark(s_menu, "");
     scale_menu(s_menu, &s_lines, &s_cols);
 
-    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 5, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
+    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 11, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
     keypad(s_menu_win, TRUE);
     PANEL* s_menu_panel = new_panel(s_menu_win);
 
@@ -190,7 +200,7 @@ int main(void) {
     set_menu_sub(s_menu, derwin(s_menu_win, s_lines, s_cols, 2 ,2));
 
     box(s_menu_win, 0, 0);
-    midPrint(s_menu_win, 1, 0, s_cols + 5, "Search", COLOR_PAIR(1));
+    midPrint(s_menu_win, 1, 0, s_cols + 11, "Search", COLOR_PAIR(1));
 
     hide_panel(s_menu_panel);
 
@@ -258,7 +268,10 @@ int main(void) {
                 doupdate();
                 break;
             case KEY_F(3):
-                searchElementMenu(s_menu_panel, s_menu_win, s_menu);
+                int32_t index = searchElementMenu(s_menu_panel, s_menu_win, s_menu, Elements, n_elements);
+                set_current_item(elements_menu, elements_items[index]);
+                pos_menu_cursor(elements_menu);
+                printElementInfo(info_txt, elements_menu, Elements);
                 break;
             case KEY_F(10):
                 endwin();
