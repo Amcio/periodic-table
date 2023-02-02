@@ -96,8 +96,14 @@ int32_t searchElement(element* Elements, size_t length, void* query, int offset)
     } else if (offset == 2 || offset == 3) {
         // Int
         for (int i = 0; i < length; i++) {
-            if ((Elements[i].anum == *(int*)query) || (Elements[i].amass == *(int*)query)) {
-                return i;
+            if (offset == 2) {
+                if (Elements[i].anum == *(int*)query) {
+                    return i;
+                }
+            } else {
+                if (Elements[i].amass == *(int*)query) {
+                   return i;
+             }
             }
         }
         return -1;

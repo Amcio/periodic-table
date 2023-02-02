@@ -73,11 +73,17 @@ void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
 }
 
 int32_t searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu, element* Elements, size_t length) {
-    int ch, offset;
-    char str[20];
+    int ch, offset, s_cols, s_lines;
+    char str[20] = "NULL";
+    scale_menu(s_menu, &s_lines, &s_cols);
+
+    werase(s_win);
+    box(s_win, 0, 0);
+    midPrint(s_win, 1, 0, s_cols + 11, "Search", COLOR_PAIR(1));
     post_menu(s_menu);
     show_panel(s_panel);
     update_panels();
+    wnoutrefresh(s_win);
     doupdate();
     while ((ch = wgetch(s_win)) != KEY_F(3)) {
         switch (ch) {
@@ -102,10 +108,13 @@ int32_t searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu, element* 
         }
     }
     exit_loop: ;
-
+    unpost_menu(s_menu); // The menu was not necessarily unposted on line 98. Make sure it is.
     hide_panel(s_panel);
     update_panels();
     doupdate();
+    if (strcmp(str, "NULL") == 0) {
+        return -1;
+    }
     if (offset == 2 || offset == 3) {
         int query = strtol(str, NULL, 10);
         return searchElement(Elements, length, &query, offset);
@@ -192,15 +201,12 @@ int main(void) {
     set_menu_mark(s_menu, "");
     scale_menu(s_menu, &s_lines, &s_cols);
 
-    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 11, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2));
+    WINDOW* s_menu_win = newwin(s_lines + 4, s_cols + 11, (LINES / 2) - 10 - (s_lines / 2), (COLS / 2) - (s_cols / 2) - 2);
     keypad(s_menu_win, TRUE);
     PANEL* s_menu_panel = new_panel(s_menu_win);
 
     set_menu_win(s_menu, s_menu_win);
     set_menu_sub(s_menu, derwin(s_menu_win, s_lines, s_cols, 2 ,2));
-
-    box(s_menu_win, 0, 0);
-    midPrint(s_menu_win, 1, 0, s_cols + 11, "Search", COLOR_PAIR(1));
 
     hide_panel(s_menu_panel);
 
@@ -269,6 +275,22 @@ int main(void) {
                 break;
             case KEY_F(3):
                 int32_t index = searchElementMenu(s_menu_panel, s_menu_win, s_menu, Elements, n_elements);
+                if (index < 0) {
+                    attron(COLOR_PAIR(2));
+                    mvaddstr((LINES / 2) - 8, (COLS / 2) - 4, "NOT FOUND");
+                    mvaddstr((LINES / 2) - 7, (COLS / 2) - 11, "PRESS ENTER TO CONTINUE");
+                    attroff(COLOR_PAIR(2));
+                    getch();
+                    mvaddstr((LINES / 2) - 8, (COLS / 2) - 4, "         ");
+                    mvaddstr((LINES / 2) - 7, (COLS / 2) - 11, "                       ");
+                    wnoutrefresh(stdscr);
+                    /* Potentially if we have enough elements, our error message might overwrite them, redraw the menu just in case */
+                    unpost_menu(elements_menu);
+                    post_menu(elements_menu);
+                    wnoutrefresh(menu_win);
+                    doupdate();
+                    continue;
+                }
                 set_current_item(elements_menu, elements_items[index]);
                 pos_menu_cursor(elements_menu);
                 printElementInfo(info_txt, elements_menu, Elements);
