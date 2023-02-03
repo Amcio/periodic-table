@@ -285,6 +285,7 @@ element* readElements(size_t* length) {
             }
             token = strtok(NULL, ",");
         }
+        // Realloc called with NULL acts just like a malloc.
         elements = (element*)realloc(elements, sizeof(element) * (*length + 1));
         elements[*length] = Element;
         (*length)++;
@@ -294,7 +295,20 @@ element* readElements(size_t* length) {
     qsort(elements, *length, sizeof(element), compareElement);
     return elements;
 }
-
+/**
+ * Function to free the Elements array
+ * @param Elements A pointer to the elements array
+ * @param length The length of the array as given by readElements()
+ * @return No return
+*/
+void freeElements(element* Elements, size_t length) {
+    for (int i = 0; i < length; i++) {
+        free(Elements[i].name);
+        free(Elements[i].symbol);
+        free(Elements[i].comment);
+    }
+    free(Elements);
+}
 // int main() {
 //     FILE* fp = fopen("test", "wb");
 //     size_t buf = 20;

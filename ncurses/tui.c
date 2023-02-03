@@ -28,6 +28,32 @@ void midPrint(WINDOW* win, int starty, int startx, int width, char* string, chty
     refresh();
 }
 
+void recreateElementMenu(MENU* elements_menu, element** Elements, size_t* n_elements) {
+    unpost_menu(elements_menu);
+    ITEM** elements_items = menu_items(elements_menu);
+    size_t old_n_elements = *n_elements;
+
+    freeElements(*Elements, *n_elements);
+    *Elements = readElements(n_elements);
+    ITEM** new_elements_items = (ITEM**)calloc((*n_elements) + 1, sizeof(ITEM*));
+
+    for (int i = 0; i < *n_elements; i++) {
+        new_elements_items[i] = new_item((*Elements)[i].symbol, (*Elements)[i].name);
+        set_item_userptr(new_elements_items[i], &(*Elements)[i]);
+    }
+    new_elements_items[(*n_elements)] = (ITEM*)NULL; // null-terminated
+    set_menu_items(elements_menu, new_elements_items);
+    /*
+    The old Elements array is still used in some way while calling set_menu_items().
+    We can only free it AFTER we swapped them.
+    */
+    for (int i = 0; elements_items[i]; i++) {
+        free_item(elements_items[i]);
+    }
+    bzero(elements_items, old_n_elements);
+    post_menu(elements_menu);
+}
+
 void addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
     int ch, add_lines, add_cols;
     FIELD** add_fields = form_fields(add_form);
@@ -194,7 +220,6 @@ int main(void) {
 
     for (int i = 0; i < 5; i++) {
         s_items[i] = new_item(choices[i], choices[i]);
-        // set_item_userptr(s_items[i], i);
     }
     MENU* s_menu = new_menu(s_items);
     menu_opts_off(s_menu, O_SHOWDESC);
@@ -291,9 +316,13 @@ int main(void) {
                     doupdate();
                     continue;
                 }
-                set_current_item(elements_menu, elements_items[index]);
+                set_current_item(elements_menu, menu_items(elements_menu)[index]);
                 pos_menu_cursor(elements_menu);
                 printElementInfo(info_txt, elements_menu, Elements);
+                break;
+            case KEY_F(9):
+                recreateElementMenu(elements_menu, &Elements, &n_elements);
+                wrefresh(menu_win);
                 break;
             case KEY_F(10):
                 endwin();
