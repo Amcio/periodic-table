@@ -201,7 +201,8 @@ void removeElement(element* Element) {
         }
         fputs(line, temp);
     }
-    // Remove the last newline
+    // Remove the last newline. This is no longer needed because of improved file handling
+    /*
     fseek(temp, 0, SEEK_END);
     long int fsize = ftell(temp);
     int fd = fileno(temp); // File descriptor for temp file
@@ -209,6 +210,7 @@ void removeElement(element* Element) {
         perror("Error truncating tempfile");
         exit(1);
     }
+    */
     fclose(temp);
     fclose(dbp);
     free(ElementStr);
@@ -226,7 +228,7 @@ void saveElement(element* Element) {
         perror("saveElement: fopen");
         exit(1);
     }
-    fprintf(fp, "\n%s,%s,%d,%d,%s", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment); 
+    fprintf(fp, "%s,%s,%d,%d,%s\n", Element->name, Element->symbol, Element->anum, Element->amass, Element->comment); 
     fclose(fp);
 }
 /**
