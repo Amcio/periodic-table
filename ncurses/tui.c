@@ -362,12 +362,17 @@ int main(void) {
     FORM* add_form = new_form(add_fields);
     scale_form(add_form, &add_lines, &add_cols); // get the size of the form
 
-    WINDOW* add_form_win = newwin(add_lines + 4, add_cols + 4, (LINES / 2) - 10 - (add_lines / 2), (COLS / 2) - (add_cols / 2));
+    WINDOW* add_form_win = newwin(add_lines + 4, add_cols + 4 + 8, (LINES / 2) - 10 - (add_lines / 2), (COLS / 2) - (add_cols / 2) - 8);
     keypad(add_form_win, TRUE);
     PANEL* add_form_panel = new_panel(add_form_win);
 
     set_form_win(add_form, add_form_win);
-    set_form_sub(add_form, derwin(add_form_win, add_lines, add_cols, 2, 2));
+    set_form_sub(add_form, derwin(add_form_win, add_lines, add_cols, 2, 9));
+    mvwaddstr(add_form_win, 3, 2, "Name");
+    mvwaddstr(add_form_win, 5, 2, "Symbol");
+    mvwaddstr(add_form_win, 7, 2, "A. Num");
+    mvwaddstr(add_form_win, 9, 2, "A. Mass");
+    mvwaddstr(add_form_win, 11, 2, "Comment");
 
     /* Styling */
     box(add_form_win, 0, 0);
