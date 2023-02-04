@@ -305,12 +305,17 @@ element* readElements(size_t* length) {
 */
 void freeElements(element* Elements, size_t length) {
     for (int i = 0; i < length; i++) {
-        free(Elements[i].name);
-        free(Elements[i].symbol);
-        free(Elements[i].comment);
+        freeElement(&Elements[i]);
     }
     free(Elements);
 }
+
+void freeElement(element* Element) {
+    free(Element->name);
+    free(Element->symbol);
+    free(Element->comment);
+}
+
 // int main() {
 //     FILE* fp = fopen("test", "wb");
 //     size_t buf = 20;

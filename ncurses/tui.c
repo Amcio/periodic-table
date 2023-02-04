@@ -51,6 +51,7 @@ void recreateElementMenu(MENU* elements_menu, element** Elements, size_t* n_elem
         free_item(elements_items[i]);
     }
     bzero(elements_items, old_n_elements);
+    free(elements_items);
     post_menu(elements_menu);
 }
 
@@ -207,6 +208,110 @@ int removeElementMenu(PANEL* remove_panel, WINDOW* remove_win, FORM* remove_form
     return 0;
 }
 
+FORM* createFilterForm() {
+    int f_lines, f_cols;
+    FIELD** filter_fields = malloc(sizeof(FIELD*) * 2); // Has to be malloc'ed, otherwise the variable is freed when function exits.
+    filter_fields[0] = new_field(1, 4, 1, 8, 0, 0);
+    filter_fields[1] = NULL;
+
+    set_field_back(filter_fields[0], A_UNDERLINE);
+    field_opts_off(filter_fields[0], O_AUTOSKIP);
+    set_field_type(filter_fields[0], TYPE_INTEGER, 3, 0, 133); // Validation for atomic number, same as in add_form
+
+    FORM* filter_form = new_form(filter_fields);
+    scale_form(filter_form, &f_lines, &f_cols);
+
+    WINDOW* filter_form_win = newwin(f_lines + 5, 25, LINES / 2 - 10 - (f_lines / 2), (COLS / 2) - (25 / 2));
+    keypad(filter_form_win, TRUE);
+    // Panel has to be created in main, because we can not get the panel from the window. We can only get the window from the panel.
+    // Creating a panel here would require us to return two variables.
+    set_form_win(filter_form, filter_form_win);
+    set_form_sub(filter_form, derwin(filter_form_win, f_lines, f_cols, 3, 2));
+
+    box(filter_form_win, 0, 0);
+    midPrint(filter_form_win, 1, 0, 25, "Filter", COLOR_PAIR(1));
+    midPrint(filter_form_win, 2, 0, 25, "Enter 0 to reset", COLOR_PAIR(99));
+    wnoutrefresh(filter_form_win);
+    post_form(filter_form);
+
+    return filter_form;
+}
+
+int filterElementsMenu(PANEL* filter_panel, FORM* filter_form) {
+    int ch, filter = -1;
+    WINDOW* filter_win = form_win(filter_form);
+    FIELD** filter_fields = form_fields(filter_form);
+    show_panel(filter_panel);
+    update_panels();
+    doupdate();
+    while ((ch = wgetch(filter_win)) != KEY_F(4)) {
+        switch (ch) {
+            case 127:
+            case KEY_BACKSPACE:
+                form_driver(filter_form, REQ_PREV_CHAR);
+                form_driver(filter_form, REQ_DEL_CHAR);
+                break;
+            case 10: // Enter
+                if (form_driver(filter_form, REQ_VALIDATION) != E_OK) {
+                    form_driver(filter_form, REQ_CLR_FIELD);
+                    continue;
+                }
+                char* buf = field_buffer(filter_fields[0], 0);
+                filter = strtol(strstrip(buf), NULL, 10);
+                goto exit_loop;
+                break;
+            default:
+                form_driver(filter_form, ch);
+                break;
+        }
+    }
+    exit_loop: ;
+    form_driver(filter_form, REQ_CLR_FIELD);
+    hide_panel(filter_panel);
+    update_panels();
+    doupdate();
+
+    return filter;
+}
+
+void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements, int filter) {
+    unpost_menu(elements_menu);
+    ITEM** elements_items = menu_items(elements_menu);
+    size_t old_n_elements = *n_elements, new_n_elements = 0;
+    element* newElements = NULL;
+
+    for (int i = 0; i < old_n_elements; i++) {
+        if ((*Elements)[i].anum < filter) {
+            newElements = (element*)realloc(newElements, sizeof(element) * (new_n_elements + 1));
+            newElements[new_n_elements] = (*Elements)[i];
+            new_n_elements++;
+        } else {
+            freeElement(&(*Elements)[i]);
+        }
+    }
+    *n_elements = new_n_elements;
+    free(*Elements); // This could potentially free ALL elements.
+    *Elements = newElements;
+    ITEM** new_elements_items = (ITEM**)calloc((new_n_elements) + 1, sizeof(ITEM*));
+    // Generation of this array could possibly be in another function. It is now done thrice.
+    for (int i = 0; i < new_n_elements; i++) {
+        new_elements_items[i] = new_item((*Elements)[i].symbol, (*Elements)[i].name);
+        set_item_userptr(new_elements_items[i], &(*Elements)[i]);
+    }
+    new_elements_items[(new_n_elements)] = (ITEM*)NULL; // null-terminated
+    set_menu_items(elements_menu, new_elements_items);
+    /*
+    The old Elements array is still used in some way while calling set_menu_items().
+    We can only free it AFTER we swapped them.
+    */
+    for (int i = 0; elements_items[i]; i++) {
+        free_item(elements_items[i]);
+    }
+    bzero(elements_items, old_n_elements);
+    free(elements_items);
+    post_menu(elements_menu);
+}
+
 void printElementInfo(WINDOW* info_win, MENU* element_menu, element* Elements) {
     werase(info_win);
     ITEM* cur_item = current_item(element_menu);
@@ -292,7 +397,6 @@ int main(void) {
     set_menu_sub(s_menu, derwin(s_menu_win, s_lines, s_cols, 2 ,2));
 
     hide_panel(s_menu_panel);
-    update_panels();
 
     /* REMOVE MENU */
     int f_cols,f_lines;
@@ -317,7 +421,12 @@ int main(void) {
     midPrint(remove_form_win, 2, 0, f_cols + 4, "Enter name:", COLOR_PAIR(99));
     post_form(remove_form);
     hide_panel(remove_form_panel);
-    update_panels();
+
+    /* FILTER FORM */
+    FORM* filter_form = createFilterForm();
+    PANEL* filter_form_panel = new_panel(form_win(filter_form));
+    hide_panel(filter_form_panel);
+    update_panels(); // Important call, update all panels.
 
     /* DISPLAY ELEMENTS */
     size_t n_elements = 0; // how many elements?
@@ -343,7 +452,7 @@ int main(void) {
     wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
 
     attron(A_REVERSE);
-    mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F10 Exit");
+    mvprintw(LINES - 1, 0, "F1 Add F2 Remove F3 Search F4 Filter F10 Exit");
     attroff(A_REVERSE);
 
     wnoutrefresh(stdscr);
@@ -399,13 +508,25 @@ int main(void) {
                     /* Potentially if we have enough elements, our error message might overwrite them, redraw the menu just in case */
                     unpost_menu(elements_menu);
                     post_menu(elements_menu);
-                    wnoutrefresh(menu_win);
-                    doupdate();
+                    wrefresh(menu_win);
                     continue;
                 }
                 set_current_item(elements_menu, menu_items(elements_menu)[index]);
                 pos_menu_cursor(elements_menu);
                 printElementInfo(info_txt, elements_menu, Elements);
+                break;
+            case KEY_F(4):
+                int filter = 0;
+                if ((filter = filterElementsMenu(filter_form_panel, filter_form)) < 0) {
+                    continue; // If no filter set, nothing happens.
+                } else if (filter == 0) {
+                    // Remove filter
+                    recreateElementMenu(elements_menu, &Elements, &n_elements);
+                } else {
+                    // Show only elements where atomic number < filter
+                    filterElements(elements_menu, &Elements, &n_elements, filter);
+                    printElementInfo(info_txt, elements_menu, Elements);
+                }
                 break;
             case KEY_F(9):
                 recreateElementMenu(elements_menu, &Elements, &n_elements);

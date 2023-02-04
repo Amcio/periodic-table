@@ -33,4 +33,6 @@ element* readElements(size_t* length);
 
 void freeElements(element* Elements, size_t length);
 
+void freeElement(element* Element);
+
 #endif
