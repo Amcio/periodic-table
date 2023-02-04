@@ -50,7 +50,7 @@ void recreateElementMenu(MENU* elements_menu, element** Elements, size_t* n_elem
     for (int i = 0; elements_items[i]; i++) {
         free_item(elements_items[i]);
     }
-    bzero(elements_items, old_n_elements);
+    // bzero(elements_items, old_n_elements);
     free(elements_items);
     post_menu(elements_menu);
 }
@@ -74,6 +74,7 @@ int addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
                 form_driver(add_form, REQ_END_LINE);
                 break;
 			case 127: // Also backspace on different systems, possibly also KEY_DC
+			case 8: // Windows
             case KEY_BACKSPACE:
                 form_driver(add_form, REQ_PREV_CHAR);
                 form_driver(add_form, REQ_DEL_CHAR);
@@ -174,6 +175,7 @@ int removeElementMenu(PANEL* remove_panel, WINDOW* remove_win, FORM* remove_form
     while ((ch =  wgetch(remove_win)) != KEY_F(2)) {
         switch (ch) {
             case 127:
+			case 8: // Windows
             case KEY_BACKSPACE:
                 form_driver(remove_form, REQ_PREV_CHAR);
                 form_driver(remove_form, REQ_DEL_CHAR);
@@ -247,6 +249,7 @@ int filterElementsMenu(PANEL* filter_panel, FORM* filter_form) {
     while ((ch = wgetch(filter_win)) != KEY_F(4)) {
         switch (ch) {
             case 127:
+			case 8: // Windows
             case KEY_BACKSPACE:
                 form_driver(filter_form, REQ_PREV_CHAR);
                 form_driver(filter_form, REQ_DEL_CHAR);
@@ -307,7 +310,7 @@ void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements,
     for (int i = 0; elements_items[i]; i++) {
         free_item(elements_items[i]);
     }
-    bzero(elements_items, old_n_elements);
+    // bzero(elements_items, old_n_elements);
     free(elements_items);
     post_menu(elements_menu);
 }
@@ -532,6 +535,7 @@ int main(void) {
                     filterElements(elements_menu, &Elements, &n_elements, filter);
                     printElementInfo(info_txt, elements_menu, Elements);
                 }
+				pos_menu_cursor(elements_menu);
                 break;
             case KEY_F(9):
                 recreateElementMenu(elements_menu, &Elements, &n_elements);

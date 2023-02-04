@@ -15,6 +15,8 @@ typedef struct element {
 
 extern int offsets[];
 
+size_t getline(char **lineptr, size_t *n, FILE *stream);
+
 char* strstrip(char* s);
 
 int elementToStr(char** str, element* Element);
