@@ -291,9 +291,17 @@ void saveElement(element* Element) {
 element* readElements(size_t* length) {
     FILE* fp = fopen(DBFile, "r");
     if (fp == NULL) {
+        if (errno == 2) {
+            element exampleElement = {.name = "Helium", .symbol = "He", .anum = 2, .amass = 4, .comment = "Ordinary element"};
+            saveElement(&exampleElement);
+        }
+    }
+    fp = fopen(DBFile, "r");
+    if (fp == NULL) {
         perror("fopen");
         if (errno == 2) {
-            printf("Are you sure you created the database?");
+            printf("Error opening database, please use the attached elements.csv\n");
+            printf("elements.csv should be in the same directory from which the binary is launched\n");
         }
         exit(1);
     }
