@@ -540,6 +540,7 @@ int main(void) {
                     filterElements(elements_menu, &Elements, &n_elements, filter);
                     printElementInfo(info_txt, elements_menu, Elements);
                 }
+                pos_menu_cursor(elements_menu);
                 wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
                 wrefresh(menu_win);
                 break;
