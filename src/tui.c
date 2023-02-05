@@ -54,7 +54,9 @@ void recreateElementMenu(MENU* elements_menu, element** Elements, size_t* n_elem
     free(elements_items);
     post_menu(elements_menu);
 }
-
+/* Function to show and handle the "Add Element" menu 
+Analogous functions can be found for every menu.
+*/
 int addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
     int ch, add_lines, add_cols, added = 0;
     FIELD** add_fields = form_fields(add_form);
@@ -116,7 +118,7 @@ int addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
     return 0;
 
 }
-
+// Returns index of the element we're looking for
 int32_t searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu, element* Elements, size_t length) {
     int ch, offset, s_cols, s_lines;
     char str[20] = "NULL";
@@ -164,7 +166,7 @@ int32_t searchElementMenu(PANEL* s_panel, WINDOW* s_win, MENU* s_menu, element* 
 
     return searchElement(Elements, length, str, offset);
 }
-
+// Returns 1 if we need to recreate our main menu, 0 otherwise
 int removeElementMenu(PANEL* remove_panel, WINDOW* remove_win, FORM* remove_form, element* Elements, size_t n_elements) {
     int ch, removed = 0;
     FIELD** remove_fields = form_fields(remove_form);
@@ -207,7 +209,8 @@ int removeElementMenu(PANEL* remove_panel, WINDOW* remove_win, FORM* remove_form
     }
     return 0;
 }
-
+/* Constructor for the filter form, reads more cleanly than throwing everything into main.
+Unfortunately there is no time to create such constructors for all menus.*/
 FORM* createFilterForm() {
     int f_lines, f_cols;
     FIELD** filter_fields = malloc(sizeof(FIELD*) * 2); // Has to be malloc'ed, otherwise the variable is freed when function exits.
@@ -236,7 +239,7 @@ FORM* createFilterForm() {
 
     return filter_form;
 }
-
+/* Returns the value of the filter, which is passed to filterElements() */
 int filterElementsMenu(PANEL* filter_panel, FORM* filter_form) {
     int ch, filter = -1;
     WINDOW* filter_win = form_win(filter_form);
@@ -273,7 +276,7 @@ int filterElementsMenu(PANEL* filter_panel, FORM* filter_form) {
 
     return filter;
 }
-
+/*Driver functions for actually filtering the elements*/
 void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements, int filter) {
     unpost_menu(elements_menu);
     ITEM** elements_items = menu_items(elements_menu);
@@ -290,7 +293,7 @@ void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements,
         }
     }
     *n_elements = new_n_elements;
-    free(*Elements); // This could potentially free ALL elements.
+    free(*Elements);
     *Elements = newElements;
     ITEM** new_elements_items = (ITEM**)calloc((new_n_elements) + 1, sizeof(ITEM*));
     // Generation of this array could possibly be in another function. It is now done thrice.
@@ -493,7 +496,7 @@ int main(void) {
                     recreateElementMenu(elements_menu, &Elements, &n_elements);
                     wrefresh(menu_win);
                 }
-                wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
+                wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE); // If our window is small enough the border will get overwritten by a menu
                 wrefresh(menu_win);
                 break;
             case KEY_F(2):
@@ -536,7 +539,7 @@ int main(void) {
                     // Remove filter
                     recreateElementMenu(elements_menu, &Elements, &n_elements);
                 } else {
-                    // Show only elements where atomic number < filter
+                    // Show only elements where atomic number <= filter
                     filterElements(elements_menu, &Elements, &n_elements, filter);
                     printElementInfo(info_txt, elements_menu, Elements);
                 }
