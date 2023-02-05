@@ -50,7 +50,7 @@ void recreateElementMenu(MENU* elements_menu, element** Elements, size_t* n_elem
     for (int i = 0; elements_items[i]; i++) {
         free_item(elements_items[i]);
     }
-    // bzero(elements_items, old_n_elements);
+    memset(elements_items, '\0', old_n_elements);
     free(elements_items);
     post_menu(elements_menu);
 }
@@ -80,8 +80,8 @@ int addElementMenu(PANEL* form_panel, WINDOW* form_win, FORM* add_form) {
                 form_driver(add_form, REQ_DEL_CHAR);
                 break;
             case 10: // Enter
-                if ((form_driver(add_form, REQ_VALIDATION) != E_OK) || !field_status(add_fields[0]) || !field_status(add_fields[1]) || !field_status(add_fields[2]) || !field_status(add_fields[3])) {
-                    midPrint(form_win, 1, 0, add_cols + 4, "Wrong Data!", COLOR_PAIR(2));
+                if ((form_driver(add_form, REQ_VALIDATION) != E_OK) || !strcmp("", strstrip(field_buffer(add_fields[1], 0))) || !strcmp("", strstrip(field_buffer(add_fields[0], 0))) || !field_status(add_fields[2]) || !field_status(add_fields[3])) {
+                    midPrint(form_win, 1, 0, add_cols + 4 + 8, "Wrong Data!", COLOR_PAIR(2));
                     // sleep(5);
                     pos_form_cursor(add_form);
                     wrefresh(form_win);
@@ -284,7 +284,7 @@ void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements,
     element* newElements = NULL;
 
     for (int i = 0; i < old_n_elements; i++) {
-        if ((*Elements)[i].anum < filter) {
+        if ((*Elements)[i].anum <= filter) {
             newElements = (element*)realloc(newElements, sizeof(element) * (new_n_elements + 1));
             newElements[new_n_elements] = (*Elements)[i];
             new_n_elements++;
@@ -310,7 +310,7 @@ void filterElements(MENU* elements_menu, element** Elements, size_t* n_elements,
     for (int i = 0; elements_items[i]; i++) {
         free_item(elements_items[i]);
     }
-    // bzero(elements_items, old_n_elements);
+    memset(elements_items, '\0', old_n_elements);
     free(elements_items);
     post_menu(elements_menu);
 }
@@ -359,6 +359,8 @@ int main(void) {
     }
 
     /* Add validation */
+    set_field_type(add_fields[0], TYPE_ALPHA, 1); // Element name
+    set_field_type(add_fields[1], TYPE_ALPHA, 1); // Element symbol !Importante
     set_field_type(add_fields[2], TYPE_INTEGER, 3, 1, 133); // Atomic number
     set_field_type(add_fields[3], TYPE_INTEGER, 6, 1, 999999); // Atomic mass
 
@@ -379,7 +381,7 @@ int main(void) {
 
     /* Styling */
     box(add_form_win, 0, 0);
-    midPrint(add_form_win, 1, 0, add_cols + 4, "Add Element", COLOR_PAIR(1));
+    midPrint(add_form_win, 1, 0, add_cols + 4 + 8, "Add Element", COLOR_PAIR(1));
 
     post_form(add_form);
     hide_panel(add_form_panel);
