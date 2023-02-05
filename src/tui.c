@@ -494,7 +494,7 @@ int main(void) {
                     wrefresh(menu_win);
                 }
                 wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
-                wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+                wrefresh(menu_win);
                 break;
             case KEY_F(2):
                 if (removeElementMenu(remove_form_panel, remove_form_win, remove_form, Elements, n_elements)) {
@@ -503,7 +503,7 @@ int main(void) {
                     printElementInfo(info_txt, elements_menu, Elements);
                 }
                 wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
-                wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+                wrefresh(menu_win);
                 break;
             case KEY_F(3):
                 int32_t index = searchElementMenu(s_menu_panel, s_menu_win, s_menu, Elements, n_elements);
@@ -526,7 +526,7 @@ int main(void) {
                 pos_menu_cursor(elements_menu);
                 printElementInfo(info_txt, elements_menu, Elements);
                 wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
-                wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+                wrefresh(menu_win);
                 break;
             case KEY_F(4):
                 int filter = 0;
@@ -541,7 +541,7 @@ int main(void) {
                     printElementInfo(info_txt, elements_menu, Elements);
                 }
                 wborder(menu_win, 0, 0, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE);
-                wborder(info_win, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+                wrefresh(menu_win);
                 break;
             case KEY_F(9):
                 recreateElementMenu(elements_menu, &Elements, &n_elements);
